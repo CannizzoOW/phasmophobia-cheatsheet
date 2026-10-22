@@ -5,6 +5,6 @@ Runs a local copy of [phasmophobia.vercel.app](https://phasmophobia.vercel.app) 
 - `streamdeck/` contains the plugin, local web server, and journal.
 - `web/` contains the standalone frontend deployed to GitHub Pages.
 
-Live frontend: https://cannizzoow.github.io/phasmophobia-cheatsheet/
+Live frontend: https://cannizzo.online/phasmophobia-cheatsheet/
 
 No browser extension or separate server is required. See [INSTALL.md](INSTALL.md) for setup.
