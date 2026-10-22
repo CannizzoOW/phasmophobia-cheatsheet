@@ -9266,6 +9266,10 @@ server.on('connection', client => {
             const message = JSON.parse(raw.toString());
             if (message.type === 'bridge-ready' || message.type === 'request-state')
                 send({ type: 'state', selected });
+            else if (message.type === 'set-state' && Array.isArray(message.selected)) {
+                const next = message.selected.filter((value) => typeof value === 'string' && evidences.includes(value));
+                enqueue(async () => { selected = [...new Set(next)]; await refresh(); });
+            }
         }
         catch { }
     });

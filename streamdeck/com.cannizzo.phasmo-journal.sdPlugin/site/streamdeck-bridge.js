@@ -1,49 +1,16 @@
 const LABELS={emf:['EMF Level 5'],dots:['D.O.T.S Projector','D.O.T.S. Projector'],fingerprints:['Fingerprints','Ultraviolet'],orbs:['Ghost Orb','Ghost Orbs'],writing:['Ghost Writing'],freezing:['Freezing Temperatures'],spirit:['Spirit Box']};
 const INPUT_INDEX={emf:0,dots:1,fingerprints:2,orbs:3,writing:4,spirit:5,freezing:6};
-const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-const normalize=value=>value.replace(/\s+/g,' ').trim().toLowerCase();
-let socket;
-let appliedSignature=null;
-
-function removeInfoTab(){
-  document.querySelectorAll('a[href="/info"],a[href$="/info"]').forEach(link=>link.remove());
-}
-const navigationObserver=new MutationObserver(removeInfoTab);
-navigationObserver.observe(document.documentElement,{childList:true,subtree:true});
-removeInfoTab();
-
-function findControl(evidence){
-  const inputs=[...document.querySelectorAll('input[type="checkbox"]')];
-  if(inputs.length>=7&&INPUT_INDEX[evidence]!==undefined)return inputs[INPUT_INDEX[evidence]];
-  const labels=LABELS[evidence]||[];
-  const wanted=labels.map(normalize);
-  const nodes=[...document.querySelectorAll('button,label,[role="button"],li,div,span')].filter(node=>wanted.includes(normalize(node.textContent||'')));
-  const node=nodes.sort((a,b)=>a.children.length-b.children.length)[0];
-  return node&&(node.matches('button,label,[role="button"]')?node:node.closest('button,label,[role="button"]')||node);
-}
-function click(element){
-  const input=element.matches('input[type="checkbox"]')?element:element.querySelector?.('input[type="checkbox"]');
-  (input||element).click();
-}
-async function apply(selected){
-  const signature=JSON.stringify([...selected].sort());
-  if(appliedSignature===signature)return;
-  sessionStorage.setItem('phasmoDeckPending',JSON.stringify(selected));
-  if(location.pathname!=='/')location.href='/';else location.reload();
-}
-async function applyPending(){
-  const raw=sessionStorage.getItem('phasmoDeckPending');
-  if(!raw)return;
-  sessionStorage.removeItem('phasmoDeckPending');
-  const selected=JSON.parse(raw);
-  for(let i=0;i<40&&!findControl('emf');i++)await wait(100);
-  for(const evidence of selected){const control=findControl(evidence);if(control){click(control);await wait(60)}}
-  appliedSignature=JSON.stringify([...selected].sort());
-}
-function connect(){
-  socket=new WebSocket(`ws://${location.host}/bridge`);
-  socket.onopen=()=>socket.send(JSON.stringify({type:'bridge-ready'}));
-  socket.onmessage=event=>{try{const message=JSON.parse(event.data);if(message.type==='state')apply(message.selected||[]);if(message.type==='ping')socket.send(JSON.stringify({type:'pong'}))}catch{}};
-  socket.onclose=()=>setTimeout(connect,1500);
-}
+const EVIDENCE=Object.keys(INPUT_INDEX),wait=ms=>new Promise(resolve=>setTimeout(resolve,ms)),normalize=value=>value.replace(/\s+/g,' ').trim().toLowerCase();
+const local=['localhost','127.0.0.1'].includes(location.hostname);let socket,appliedSignature=null,suppress=false,retryTimer,panelAdded=false;
+function removeInfoTab(){document.querySelectorAll('a[href="/info"],a[href$="/info"]').forEach(link=>link.remove())}new MutationObserver(removeInfoTab).observe(document.documentElement,{childList:true,subtree:true});removeInfoTab();
+function findControl(evidence){const inputs=[...document.querySelectorAll('input[type="checkbox"]')];if(inputs.length>=7&&INPUT_INDEX[evidence]!==undefined)return inputs[INPUT_INDEX[evidence]];const wanted=(LABELS[evidence]||[]).map(normalize);const nodes=[...document.querySelectorAll('button,label,[role="button"],li,div,span')].filter(node=>wanted.includes(normalize(node.textContent||'')));const node=nodes.sort((a,b)=>a.children.length-b.children.length)[0];return node&&(node.matches('button,label,[role="button"]')?node:node.closest('button,label,[role="button"]')||node)}
+function click(element){const input=element.matches('input[type="checkbox"]')?element:element.querySelector?.('input[type="checkbox"]');(input||element).click()}
+function selectedFromPage(){const inputs=[...document.querySelectorAll('input[type="checkbox"]')];return EVIDENCE.filter(id=>inputs[INPUT_INDEX[id]]?.checked)}
+function send(message){if(socket?.readyState===WebSocket.OPEN)socket.send(JSON.stringify(message))}
+async function apply(selected){const signature=JSON.stringify([...selected].sort());if(appliedSignature===signature)return;sessionStorage.setItem('phasmoDeckPending',JSON.stringify(selected));if(location.pathname!=='/'){const target=new URL('/',location.origin);target.search=location.search;location.href=target}else location.reload()}
+async function applyPending(){const raw=sessionStorage.getItem('phasmoDeckPending');if(!raw)return;sessionStorage.removeItem('phasmoDeckPending');const selected=JSON.parse(raw);for(let i=0;i<40&&!findControl('emf');i++)await wait(100);suppress=true;for(const evidence of selected){const control=findControl(evidence);if(control){click(control);await wait(60)}}suppress=false;appliedSignature=JSON.stringify([...selected].sort())}
+function pairingPanel(room){if(local||panelAdded)return;panelAdded=true;const panel=document.createElement('div');panel.style.cssText='position:fixed;left:12px;bottom:12px;z-index:9999;padding:8px 10px;border-radius:6px;background:#18181be8;color:#fff;font:12px system-ui;box-shadow:0 4px 18px #0008;display:flex;gap:8px;align-items:center';panel.innerHTML=`<span id="deck-status">Connecting…</span><code>${room||'No code'}</code><button style="padding:4px 7px;border:1px solid #777;border-radius:4px;background:#29292d;color:#fff;cursor:pointer">Copy link</button>`;panel.querySelector('button').onclick=async()=>{await navigator.clipboard.writeText(location.href);panel.querySelector('button').textContent='Copied'};document.body.append(panel)}
+function status(text){const node=document.querySelector('#deck-status');if(node)node.textContent=text}
+function connect(){clearTimeout(retryTimer);const room=new URLSearchParams(location.search).get('room')||localStorage.getItem('phasmo-room')||'';if(!local&&room)localStorage.setItem('phasmo-room',room);pairingPanel(room);if(!local&&!room){status('Open from Stream Deck');return}socket=new WebSocket(local?`ws://${location.host}/bridge`:`wss://${location.host}`);socket.onopen=()=>{status('Connected');if(local)send({type:'bridge-ready'});else{send({type:'join',room,role:'browser'});send({type:'request-state',room})}};socket.onmessage=event=>{try{const message=JSON.parse(event.data);if(message.type==='state')apply(message.selected||[]);if(message.type==='ping')send({type:'pong'})}catch{}};socket.onclose=()=>{status('Reconnecting…');retryTimer=setTimeout(connect,2000)}}
+document.addEventListener('change',event=>{if(suppress||!event.target.matches?.('input[type="checkbox"]'))return;const selected=selectedFromPage();appliedSignature=JSON.stringify([...selected].sort());const room=new URLSearchParams(location.search).get('room')||localStorage.getItem('phasmo-room')||'';send(local?{type:'set-state',selected}:{type:'set-state',room,selected})},true);
 applyPending().then(connect);

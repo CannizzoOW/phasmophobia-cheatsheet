@@ -52,7 +52,7 @@ server.on('connection',client=>{
   clients.add(client);
   client.on('close',()=>clients.delete(client));
   client.on('message',raw=>{
-    try{const message=JSON.parse(raw.toString());if(message.type==='bridge-ready'||message.type==='request-state')send({type:'state',selected})}catch{}
+    try{const message=JSON.parse(raw.toString());if(message.type==='bridge-ready'||message.type==='request-state')send({type:'state',selected});else if(message.type==='set-state'&&Array.isArray(message.selected)){const next=(message.selected as unknown[]).filter((value):value is Evidence=>typeof value==='string'&&evidences.includes(value as Evidence));enqueue(async()=>{selected=[...new Set<Evidence>(next)];await refresh()})}}catch{}
   });
 });
 setInterval(()=>send({type:'ping'}),20000);

@@ -4,3 +4,4 @@ relay/node_modules/
 .DS_Store
 .chrome-test/
 web-preview.png
+render-root.txt

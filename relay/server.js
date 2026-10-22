@@ -4,7 +4,7 @@ import {createReadStream,existsSync,statSync} from 'node:fs';
 import {extname,join,normalize} from 'node:path';
 import {fileURLToPath} from 'node:url';
 const port=Number(process.env.PORT||8080),rooms=new Map(),states=new Map();
-const staticRoot=fileURLToPath(new URL('../docs/',import.meta.url));
+const staticRoot=fileURLToPath(new URL('../streamdeck/com.cannizzo.phasmo-journal.sdPlugin/site/',import.meta.url));
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.ttf':'font/ttf','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'};
 const http=createServer((request,response)=>{
   const pathname=decodeURIComponent(new URL(request.url||'/','http://localhost').pathname);
