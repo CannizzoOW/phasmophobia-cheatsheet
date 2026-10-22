@@ -1,4 +1,5 @@
 streamdeck/node_modules/
+relay/node_modules/
 *.log
 .DS_Store
 .chrome-test/
