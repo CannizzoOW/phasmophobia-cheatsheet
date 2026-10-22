@@ -16,7 +16,7 @@ let operationQueue:Promise<void>=Promise.resolve();
 let relay:WebSocket|undefined;
 let relayRetry:NodeJS.Timeout|undefined;
 const relayUrl='wss://phasmophobia-journal-relay-cannizzo.onrender.com';
-const journalUrl='https://cannizzo.online/phasmophobia-cheatsheet/';
+const journalUrl='https://phasmophobia-journal-relay-cannizzo.onrender.com/';
 const clients=new Set<WebSocket>();
 const siteRoot=fileURLToPath(new URL('../site/',import.meta.url));
 const mime:Record<string,string>={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.ico':'image/x-icon','.ttf':'font/ttf','.webmanifest':'application/manifest+json'};

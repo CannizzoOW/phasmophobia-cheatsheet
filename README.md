@@ -6,7 +6,9 @@ Runs a local copy of [phasmophobia.vercel.app](https://phasmophobia.vercel.app) 
 - `docs/` contains the standalone frontend deployed to GitHub Pages.
 - `relay/` contains the secure WebSocket relay used by the hosted frontend and plugin.
 
-Live frontend: https://cannizzo.online/phasmophobia-cheatsheet/
+Live frontend (Render fallback): https://phasmophobia-journal-relay-cannizzo.onrender.com/
+
+GitHub Pages frontend: https://cannizzo.online/phasmophobia-cheatsheet/
 
 Deploy the relay: https://render.com/deploy?repo=https://github.com/CannizzoOW/phasmophobia-cheatsheet
 

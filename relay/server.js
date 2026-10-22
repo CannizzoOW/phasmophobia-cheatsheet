@@ -1,7 +1,19 @@
 import {createServer} from 'node:http';
 import {WebSocketServer,WebSocket} from 'ws';
+import {createReadStream,existsSync,statSync} from 'node:fs';
+import {extname,join,normalize} from 'node:path';
+import {fileURLToPath} from 'node:url';
 const port=Number(process.env.PORT||8080),rooms=new Map(),states=new Map();
-const http=createServer((_request,response)=>{response.writeHead(200,{'content-type':'application/json','access-control-allow-origin':'*'});response.end(JSON.stringify({ok:true,rooms:rooms.size}))});
+const staticRoot=fileURLToPath(new URL('../docs/',import.meta.url));
+const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.ttf':'font/ttf','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'};
+const http=createServer((request,response)=>{
+  const pathname=decodeURIComponent(new URL(request.url||'/','http://localhost').pathname);
+  if(pathname==='/health'){response.writeHead(200,{'content-type':'application/json','access-control-allow-origin':'*'});response.end(JSON.stringify({ok:true,rooms:rooms.size}));return}
+  const requested=normalize(join(staticRoot,pathname));
+  const file=requested.startsWith(staticRoot)&&existsSync(requested)&&statSync(requested).isFile()?requested:join(staticRoot,'index.html');
+  response.writeHead(200,{'content-type':mime[extname(file)]||'application/octet-stream','cache-control':'no-cache','x-content-type-options':'nosniff'});
+  createReadStream(file).pipe(response);
+});
 const server=new WebSocketServer({server:http,maxPayload:4096});
 function validRoom(value){return typeof value==='string'&&/^[A-Za-z0-9_-]{6,24}$/.test(value)}
 function send(client,message){if(client.readyState===WebSocket.OPEN)client.send(JSON.stringify(message))}
