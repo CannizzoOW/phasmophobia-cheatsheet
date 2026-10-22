@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#171717" />
+    <meta name="description" content="Interactive Phasmophobia evidence journal and ghost filter." />
+    <title>Phasmophobia Evidence Journal</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="masthead">
+        <p class="eyebrow">Investigation journal</p>
+        <h1>Phasmophobia Evidence</h1>
+        <p>Select the evidence you have found. Every selection narrows the list of possible ghosts.</p>
+      </header>
+      <section class="journal" aria-label="Evidence journal">
+        <div class="page evidence-page">
+          <div class="section-heading"><div><p class="page-label">Evidence</p><h2>What did you find?</h2></div><button id="reset" class="reset" type="button">Reset</button></div>
+          <div id="evidence-list" class="evidence-list"></div>
+          <p class="hint">Tap an active item again to remove it.</p>
+        </div>
+        <div class="page results-page">
+          <div class="section-heading"><div><p class="page-label">Possible ghosts</p><h2 id="result-heading">24 candidates</h2></div><span id="selection-count" class="counter">0 / 3</span></div>
+          <div id="ghost-list" class="ghost-list" aria-live="polite"></div>
+          <p id="empty-state" class="empty" hidden>No ghost matches this evidence combination.</p>
+        </div>
+      </section>
+      <footer>Unofficial fan-made tool. Not affiliated with Kinetic Games.</footer>
+    </main>
+    <script src="./app.js"></script>
+  </body>
+</html>

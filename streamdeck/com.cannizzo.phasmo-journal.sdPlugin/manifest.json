@@ -1,0 +1,227 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+  "UUID": "com.cannizzo.phasmo-journal",
+  "Name": "Phasmo Journal Bridge",
+  "Version": "2.2.0.0",
+  "Author": "Cannizzo",
+  "Description": "Control phasmophobia.vercel.app directly from your Stream Deck.",
+  "Category": "Phasmo Journal Bridge",
+  "CategoryIcon": "imgs/category",
+  "Icon": "imgs/marketplace",
+  "CodePath": "bin/plugin.js",
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "6.6"
+  },
+  "Nodejs": {
+    "Version": "20"
+  },
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    },
+    {
+      "Platform": "mac",
+      "MinimumVersion": "12"
+    }
+  ],
+  "Actions": [
+    {
+      "UUID": "com.cannizzo.phasmo-journal.emf",
+      "DisableAutomaticStates": true,
+      "Name": "EMF 5",
+      "Icon": "imgs/category",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key",
+          "Title": "EMF 5",
+          "TitleAlignment": "middle"
+        },
+        {
+          "Image": "imgs/key-active",
+          "Title": "EMF 5",
+          "TitleAlignment": "middle"
+        }
+      ]
+    },
+    {
+      "UUID": "com.cannizzo.phasmo-journal.fingerprints",
+      "DisableAutomaticStates": true,
+      "Name": "Fingerprints",
+      "Icon": "imgs/category",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key",
+          "Title": "PRINTS",
+          "TitleAlignment": "middle"
+        },
+        {
+          "Image": "imgs/key-active",
+          "Title": "PRINTS",
+          "TitleAlignment": "middle"
+        }
+      ]
+    },
+    {
+      "UUID": "com.cannizzo.phasmo-journal.dots",
+      "DisableAutomaticStates": true,
+      "Name": "D.O.T.S.",
+      "Icon": "imgs/category",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key",
+          "Title": "DOTS",
+          "TitleAlignment": "middle"
+        },
+        {
+          "Image": "imgs/key-active",
+          "Title": "DOTS",
+          "TitleAlignment": "middle"
+        }
+      ]
+    },
+    {
+      "UUID": "com.cannizzo.phasmo-journal.orbs",
+      "DisableAutomaticStates": true,
+      "Name": "Ghost Orbs",
+      "Icon": "imgs/category",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key",
+          "Title": "ORBS",
+          "TitleAlignment": "middle"
+        },
+        {
+          "Image": "imgs/key-active",
+          "Title": "ORBS",
+          "TitleAlignment": "middle"
+        }
+      ]
+    },
+    {
+      "UUID": "com.cannizzo.phasmo-journal.writing",
+      "DisableAutomaticStates": true,
+      "Name": "Ghost Writing",
+      "Icon": "imgs/category",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key",
+          "Title": "WRITING",
+          "TitleAlignment": "middle"
+        },
+        {
+          "Image": "imgs/key-active",
+          "Title": "WRITING",
+          "TitleAlignment": "middle"
+        }
+      ]
+    },
+    {
+      "UUID": "com.cannizzo.phasmo-journal.freezing",
+      "DisableAutomaticStates": true,
+      "Name": "Freezing Temperatures",
+      "Icon": "imgs/category",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key",
+          "Title": "FREEZING",
+          "TitleAlignment": "middle"
+        },
+        {
+          "Image": "imgs/key-active",
+          "Title": "FREEZING",
+          "TitleAlignment": "middle"
+        }
+      ]
+    },
+    {
+      "UUID": "com.cannizzo.phasmo-journal.spirit",
+      "DisableAutomaticStates": true,
+      "Name": "Spirit Box",
+      "Icon": "imgs/category",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key",
+          "Title": "SPIRIT BOX",
+          "TitleAlignment": "middle"
+        },
+        {
+          "Image": "imgs/key-active",
+          "Title": "SPIRIT BOX",
+          "TitleAlignment": "middle"
+        }
+      ]
+    },
+    {
+      "UUID": "com.cannizzo.phasmo-journal.result",
+      "Name": "Ghost Result",
+      "Icon": "imgs/category",
+      "Tooltip": "Add multiple copies to create a dynamic array of possible ghosts, ordered by position.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/result",
+          "Title": "—",
+          "TitleAlignment": "middle",
+          "FontSize": 13
+        }
+      ]
+    },
+    {
+      "UUID": "com.cannizzo.phasmo-journal.open",
+      "Name": "Open Journal",
+      "Icon": "imgs/category",
+      "Tooltip": "Reveal and focus the journal tab.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key",
+          "Title": "OPEN\nJOURNAL",
+          "TitleAlignment": "middle"
+        }
+      ]
+    },
+    {
+      "UUID": "com.cannizzo.phasmo-journal.reset",
+      "Name": "Reset Journal",
+      "Icon": "imgs/category",
+      "Tooltip": "Clear every evidence selection.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key",
+          "Title": "RESET",
+          "TitleAlignment": "middle"
+        }
+      ]
+    }
+  ]
+}
