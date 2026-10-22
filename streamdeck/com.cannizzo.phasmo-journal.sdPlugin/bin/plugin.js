@@ -9210,7 +9210,7 @@ let operationQueue = Promise.resolve();
 let relay;
 let relayRetry;
 const relayUrl = 'wss://phasmophobia-journal-relay-cannizzo.onrender.com';
-const journalUrl = 'https://phasmophobia-journal-relay-cannizzo.onrender.com/';
+const journalUrl = 'https://cannizzo.online/phasmophobia-cheatsheet/';
 const clients = new Set();
 const siteRoot = fileURLToPath(new URL('../site/', import.meta.url));
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon', '.ttf': 'font/ttf', '.webmanifest': 'application/manifest+json' };
