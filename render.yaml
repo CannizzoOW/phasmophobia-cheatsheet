@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: phasmophobia-journal-relay-cannizzo
+    runtime: node
+    rootDir: relay
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /
+    autoDeploy: true
+    plan: free

@@ -1,0 +1,6 @@
+import {spawn} from 'node:child_process';
+import {WebSocket} from 'ws';
+const port=18942,server=spawn(process.execPath,['server.js'],{cwd:new URL('.',import.meta.url),env:{...process.env,PORT:String(port)},stdio:'ignore'});
+const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const open=()=>new Promise((resolve,reject)=>{const ws=new WebSocket(`ws://127.0.0.1:${port}`);ws.once('open',()=>resolve(ws));ws.once('error',reject)});
+try{await delay(300);const plugin=await open(),browser=await open(),received=new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Relay timeout')),2000);plugin.on('message',raw=>{const message=JSON.parse(raw);if(message.type==='set-state'){clearTimeout(timer);resolve(message)}})});plugin.send(JSON.stringify({type:'join',room:'test-room-12',role:'plugin'}));browser.send(JSON.stringify({type:'join',room:'test-room-12',role:'browser'}));browser.send(JSON.stringify({type:'set-state',room:'test-room-12',selected:['emf','dots']}));const message=await received;if(message.selected.join(',')!=='emf,dots')throw new Error('Unexpected state');plugin.close();browser.close();console.log('PASS: browser state reached plugin through relay.')}finally{server.kill()}

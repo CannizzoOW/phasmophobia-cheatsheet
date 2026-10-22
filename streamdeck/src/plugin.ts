@@ -5,12 +5,18 @@ import {createServer} from 'node:http';
 import {extname,join,normalize} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawn} from 'node:child_process';
+import {randomBytes} from 'node:crypto';
 import {Evidence,evidenceLabels,evidences,matches} from './data.js';
 
-type State={selected?:Evidence[]};
+type State={selected?:Evidence[],room?:string};
 const visible=new Map<string,{action:any,kind:'evidence'|'result',evidence?:Evidence,row:number,column:number}>();
 let selected:Evidence[]=[];
+let room='';
 let operationQueue:Promise<void>=Promise.resolve();
+let relay:WebSocket|undefined;
+let relayRetry:NodeJS.Timeout|undefined;
+const relayUrl='wss://phasmophobia-journal-relay-cannizzo.onrender.com';
+const journalUrl='https://cannizzo.online/phasmophobia-cheatsheet/';
 const clients=new Set<WebSocket>();
 const siteRoot=fileURLToPath(new URL('../site/',import.meta.url));
 const mime:Record<string,string>={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.ico':'image/x-icon','.ttf':'font/ttf','.webmanifest':'application/manifest+json'};
@@ -32,6 +38,16 @@ function send(message:object){
   const payload=JSON.stringify(message);
   for(const client of clients) if(client.readyState===WebSocket.OPEN) client.send(payload);
 }
+
+function sendRelay(message:object){if(relay?.readyState===WebSocket.OPEN)relay.send(JSON.stringify(message))}
+function connectRelay(){
+  if(!room)return;
+  relay=new WebSocket(relayUrl);
+  relay.on('open',()=>{streamDeck.logger.info(`Connected to journal relay for room ${room}`);sendRelay({type:'join',room,role:'plugin'});sendRelay({type:'state',room,selected})});
+  relay.on('message',raw=>{try{const message=JSON.parse(raw.toString());if(message.type==='set-state'&&Array.isArray(message.selected)){const next=(message.selected as unknown[]).filter((value):value is Evidence=>typeof value==='string'&&evidences.includes(value as Evidence));enqueue(async()=>{selected=[...new Set<Evidence>(next)];await refresh()})}else if(message.type==='request-state')sendRelay({type:'state',room,selected})}catch(error){streamDeck.logger.warn(`Ignored invalid relay message: ${String(error)}`)}});
+  relay.on('close',()=>{relay=undefined;clearTimeout(relayRetry);relayRetry=setTimeout(connectRelay,5000)});
+  relay.on('error',error=>streamDeck.logger.warn(`Relay connection error: ${error.message}`));
+}
 server.on('connection',client=>{
   clients.add(client);
   client.on('close',()=>clients.delete(client));
@@ -45,8 +61,9 @@ async function refresh(){
   const snapshot=[...selected];
   const names=snapshot.length?matches(snapshot):[];
   const resultOrder=[...visible.entries()].filter(([,item])=>item.kind==='result').sort((a,b)=>a[1].row-b[1].row||a[1].column-b[1].column).map(([id])=>id);
-  await streamDeck.settings.setGlobalSettings<State>({selected});
+  await streamDeck.settings.setGlobalSettings<State>({selected,room});
   send({type:'state',selected:snapshot});
+  sendRelay({type:'state',room,selected:snapshot});
   await Promise.all([...visible.values()].map(async item=>{
     if(item.kind==='evidence'&&item.evidence){
       await item.action.setState(snapshot.includes(item.evidence)?1:0);
@@ -85,9 +102,9 @@ class ResultAction extends SingletonAction{
 @action({UUID:'com.cannizzo.phasmo-journal.open'})
 class OpenJournalAction extends SingletonAction{
   override async onKeyDown(ev:KeyDownEvent){
-    const url='http://127.0.0.1:17891/';
+    const url=`${journalUrl}?room=${encodeURIComponent(room)}`;
     await ev.action.showOk();
-    streamDeck.logger.info(`Opening local journal: ${url}`);
+    streamDeck.logger.info(`Opening hosted journal: ${url}`);
     if(process.platform==='win32'){
       const child=spawn('explorer.exe',[url],{detached:true,stdio:'ignore',windowsHide:true});
       child.on('error',error=>streamDeck.logger.error(`Failed to open journal: ${error.message}`));
@@ -114,5 +131,5 @@ streamDeck.actions.registerAction(new OpenJournalAction());
 streamDeck.actions.registerAction(new ResetJournalAction());
 console.log('Connecting Phasmo Journal plugin');
 
-streamDeck.settings.getGlobalSettings<State>().then(s=>{selected=(s.selected||[]).filter(x=>evidences.includes(x));return refresh()});
+streamDeck.settings.getGlobalSettings<State>().then(async s=>{selected=(s.selected||[]).filter(x=>evidences.includes(x));room=s.room||randomBytes(9).toString('base64url');await streamDeck.settings.setGlobalSettings<State>({selected,room});connectRelay();return refresh()});
 streamDeck.connect();

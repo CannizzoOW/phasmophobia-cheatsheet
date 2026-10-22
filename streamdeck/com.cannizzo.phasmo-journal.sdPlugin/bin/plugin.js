@@ -12,7 +12,7 @@ import require$$2 from 'util';
 import fs, { existsSync, readFileSync, statSync, createReadStream } from 'node:fs';
 import path, { join, normalize, extname } from 'node:path';
 import { cwd } from 'node:process';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, randomBytes } from 'node:crypto';
 import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
@@ -9205,7 +9205,12 @@ function matches(selected) { return Object.entries(rows).filter(([name, ev]) => 
 
 const visible = new Map();
 let selected = [];
+let room = '';
 let operationQueue = Promise.resolve();
+let relay;
+let relayRetry;
+const relayUrl = 'wss://phasmophobia-journal-relay-cannizzo.onrender.com';
+const journalUrl = 'https://cannizzo.online/phasmophobia-cheatsheet/';
 const clients = new Set();
 const siteRoot = fileURLToPath(new URL('../site/', import.meta.url));
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon', '.ttf': 'font/ttf', '.webmanifest': 'application/manifest+json' };
@@ -9231,6 +9236,28 @@ function send(message) {
         if (client.readyState === WebSocket.OPEN)
             client.send(payload);
 }
+function sendRelay(message) { if (relay?.readyState === WebSocket.OPEN)
+    relay.send(JSON.stringify(message)); }
+function connectRelay() {
+    if (!room)
+        return;
+    relay = new WebSocket(relayUrl);
+    relay.on('open', () => { streamDeck.logger.info(`Connected to journal relay for room ${room}`); sendRelay({ type: 'join', room, role: 'plugin' }); sendRelay({ type: 'state', room, selected }); });
+    relay.on('message', raw => { try {
+        const message = JSON.parse(raw.toString());
+        if (message.type === 'set-state' && Array.isArray(message.selected)) {
+            const next = message.selected.filter((value) => typeof value === 'string' && evidences.includes(value));
+            enqueue(async () => { selected = [...new Set(next)]; await refresh(); });
+        }
+        else if (message.type === 'request-state')
+            sendRelay({ type: 'state', room, selected });
+    }
+    catch (error) {
+        streamDeck.logger.warn(`Ignored invalid relay message: ${String(error)}`);
+    } });
+    relay.on('close', () => { relay = undefined; clearTimeout(relayRetry); relayRetry = setTimeout(connectRelay, 5000); });
+    relay.on('error', error => streamDeck.logger.warn(`Relay connection error: ${error.message}`));
+}
 server.on('connection', client => {
     clients.add(client);
     client.on('close', () => clients.delete(client));
@@ -9248,8 +9275,9 @@ async function refresh() {
     const snapshot = [...selected];
     const names = snapshot.length ? matches(snapshot) : [];
     const resultOrder = [...visible.entries()].filter(([, item]) => item.kind === 'result').sort((a, b) => a[1].row - b[1].row || a[1].column - b[1].column).map(([id]) => id);
-    await streamDeck.settings.setGlobalSettings({ selected });
+    await streamDeck.settings.setGlobalSettings({ selected, room });
     send({ type: 'state', selected: snapshot });
+    sendRelay({ type: 'state', room, selected: snapshot });
     await Promise.all([...visible.values()].map(async (item) => {
         if (item.kind === 'evidence' && item.evidence) {
             await item.action.setState(snapshot.includes(item.evidence) ? 1 : 0);
@@ -9452,9 +9480,9 @@ let OpenJournalAction = (() => {
             __runInitializers(_classThis, _classExtraInitializers);
         }
         async onKeyDown(ev) {
-            const url = 'http://127.0.0.1:17891/';
+            const url = `${journalUrl}?room=${encodeURIComponent(room)}`;
             await ev.action.showOk();
-            streamDeck.logger.info(`Opening local journal: ${url}`);
+            streamDeck.logger.info(`Opening hosted journal: ${url}`);
             if (process.platform === 'win32') {
                 const child = spawn('explorer.exe', [url], { detached: true, stdio: 'ignore', windowsHide: true });
                 child.on('error', error => streamDeck.logger.error(`Failed to open journal: ${error.message}`));
@@ -9498,6 +9526,6 @@ streamDeck.actions.registerAction(new ResultAction());
 streamDeck.actions.registerAction(new OpenJournalAction());
 streamDeck.actions.registerAction(new ResetJournalAction());
 console.log('Connecting Phasmo Journal plugin');
-streamDeck.settings.getGlobalSettings().then(s => { selected = (s.selected || []).filter(x => evidences.includes(x)); return refresh(); });
+streamDeck.settings.getGlobalSettings().then(async (s) => { selected = (s.selected || []).filter(x => evidences.includes(x)); room = s.room || randomBytes(9).toString('base64url'); await streamDeck.settings.setGlobalSettings({ selected, room }); connectRelay(); return refresh(); });
 streamDeck.connect();
 //# sourceMappingURL=plugin.js.map
